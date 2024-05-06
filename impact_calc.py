@@ -398,7 +398,7 @@ class MultiExpBayesianOptimizer(BayesianOptimizer):
 def load_worldpop(country: str, year: int) -> Exposures:
     """Load the WorldPop data"""
     country = country.lower()
-    iso = country_to_iso(country, representation="alpha3")
+    iso = country_to_iso(country, representation="alpha3").lower()
     if year not in np.arange(2008, 2020):
         year = 2020
     filepath = (
@@ -560,16 +560,20 @@ def calibration_input(country: str, intensity: str, function: str):
 
         # Threshold, Half-point
         # bounds = {"threshold": (0.01, 2), "half_point": (0.01, 10)}
-        # constraints = NonlinearConstraint(
-        #     lambda threshold, half_point, **_: threshold - half_point, lb=-np.inf, ub=0
-        # )
+        constraints = NonlinearConstraint(
+            lambda threshold, half_point, **_: threshold - half_point, lb=-np.inf, ub=0
+        )
 
         # Half-point, upper limit
-        bounds = {"half_point": (0.01, 5), "upper_limit": (0.001, 1)}
+        bounds = {
+            "threshold": (0.01, 2),
+            "half_point": (0.01, 5),
+            "upper_limit": (0.001, 1),
+        }
         constraints = None
-        impact_func_creator = lambda half_point, upper_limit: sigmoid_impf(
+        impact_func_creator = lambda threshold, half_point, upper_limit: sigmoid_impf(
             intensity=hazard_intensity,
-            threshold=0.1,
+            threshold=threshold,
             half_point=half_point,
             upper_limit=upper_limit,
             exponent=3,
