@@ -23,7 +23,7 @@ from climada.util.config import CONFIG
 
 from climada_petals.hazard.rf_glofas import hazard_series_from_dataset
 
-YEAR_RANGE_DEFAULT = np.arange(2008, 2022 + 1)
+YEAR_RANGE_DEFAULT = np.arange(2008, 2023 + 1)
 DISPLACEMENT_DATA_PATH = (
     Path(__file__).parent / "data/IDMC_GIDD_Disasters_Internal_Displacement_Data.xlsx"
 )
@@ -302,20 +302,42 @@ class MultiExpImpactCalc:
                 )
             # TODO: Test that exposures have same coordinates!
 
-    def impact(self, save_mat=True, assign_centroids=False):
+    # def impact(self, save_mat=True, assign_centroids=False):
+    #     """Compute the impact"""
+    #     impacts = [
+    #         ImpactCalc(
+    #             exposures=self.exposures[event_id],
+    #             impfset=self.impfset,
+    #             hazard=self.hazard.select(event_id=[event_id]),
+    #         ).impact(save_mat=save_mat, assign_centroids=assign_centroids)
+    #         for event_id in self.hazard.event_id.flat
+    #     ]
+    #     for impact in impacts:
+    #         for attr in ("crs", "tot_value", "unit", "frequency_unit"):
+    #             setattr(impact, attr, 0)
+    #     return Impact.concat(impacts, reset_event_ids=False)
+
+    def impact(self, save_mat=False, assign_centroids=False):
         """Compute the impact"""
-        impacts = [
+        at_event = [
             ImpactCalc(
                 exposures=self.exposures[event_id],
                 impfset=self.impfset,
                 hazard=self.hazard.select(event_id=[event_id]),
-            ).impact(save_mat=save_mat, assign_centroids=assign_centroids)
+            )
+            .impact(save_mat=save_mat, assign_centroids=assign_centroids)
+            .at_event
             for event_id in self.hazard.event_id.flat
         ]
-        for impact in impacts:
-            for attr in ("crs", "tot_value", "unit", "frequency_unit"):
-                setattr(impact, attr, 0)
-        return Impact.concat(impacts, reset_event_ids=False)
+        at_event = np.concatenate(at_event)
+        exp = self.exposures[self.hazard.event_id[0]]
+        return Impact.from_eih(
+            exposures=exp,
+            hazard=self.hazard,
+            at_event=at_event,
+            eai_exp=np.zeros(len(exp.gdf)),
+            aai_agg=0.0,
+        )
 
 
 @dataclass
