@@ -23,7 +23,7 @@ from climada.util.config import CONFIG
 
 from climada_petals.hazard.rf_glofas import hazard_series_from_dataset
 
-YEAR_RANGE_DEFAULT = np.arange(2008, 2022 + 1)
+YEAR_RANGE_DEFAULT = np.arange(2008, 2023 + 1)
 DISPLACEMENT_DATA_PATH = (
     Path(__file__).parent / "data/IDMC_GIDD_Disasters_Internal_Displacement_Data.xlsx"
 )

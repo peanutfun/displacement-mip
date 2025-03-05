@@ -3,20 +3,24 @@ import matplotlib.colors as mcolors
 from multiprocessing.pool import Pool
 import argparse
 from pathlib import Path
+import numpy as np
 
 from climada.util import log_level
 from climada.util.calibrate import BayesianOptimizerController
 
-from impact_calc import calibration_input, PersistingMultiExpBayesianOptimizer
+from impact_calc import calibration_input, PersistingMultiExpBayesianOptimizer, MultiExpBayesianOptimizer
 
+year_range = np.arange(2008, 2021 + 1)
 
 def calibrate(ctry, prot, output_dir):
     intensity = "flood_depth" if prot == "no_protection" else "flood_depth_flopros"
 
     inp = calibration_input(ctry, intensity, "sigmoid")
-    opt = PersistingMultiExpBayesianOptimizer(inp)
+    inp.hazard = inp.hazard.select(event_id=year_range.tolist())
+    # opt = PersistingMultiExpBayesianOptimizer(inp)
+    opt = MultiExpBayesianOptimizer(inp)
     controller = BayesianOptimizerController.from_input(inp, sampling_base=4)
-    
+
     output_path = Path(f"data/generated/{ctry}") / output_dir
     output_path.mkdir(parents=True, exist_ok=True)
 
@@ -31,7 +35,7 @@ def calibrate(ctry, prot, output_dir):
             for idx, ax in enumerate(axes):
                 ax.set_title(f"{ctry} - {prot}")
                 ax.get_figure().savefig(
-                    foutput_path / f"pspace-{prot}-{idx}.pdf"
+                    output_path / f"pspace-{prot}-{idx}.pdf"
                 )
 
 
